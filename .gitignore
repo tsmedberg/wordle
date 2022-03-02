@@ -482,6 +482,7 @@ flycheck_*.el
 
 .gradle
 /build/
+!/build/web/
 
 # Ignore Gradle GUI config
 gradle-app.setting
