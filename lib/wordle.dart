@@ -10,7 +10,7 @@ const qwerty = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
 
 class Wordle {
   Web web;
-  String word = Words.words[Random().nextInt(Words.words.length)];
+  String word = Words.getWord();
   List<String> guesses = List.empty(growable: true);
   List<String> correctLetters = List.empty(growable: true);
   List<String> incorrectLetters = List.empty(growable: true);
@@ -18,7 +18,7 @@ class Wordle {
 
   Wordle({required this.web});
   bool guess(String guessWord) {
-    if (Words.words.contains(guessWord)) {
+    if (Words.canGuess(guessWord)) {
       guesses.add(guessWord);
       //calculate correct letters
       for (String row in qwerty) {
@@ -46,7 +46,7 @@ class Wordle {
 
   WordleState state(x, string) {
     String letter = (string.length > x ? string[x] : "");
-    if (this.word[x] == letter) {
+    if (word[x] == letter) {
       return WordleState.correct;
     } else if (word.contains(letter)) {
       return WordleState.incorrect;
