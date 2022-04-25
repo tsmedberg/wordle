@@ -1,24 +1,28 @@
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'web.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'words.dart';
-import "dart:math";
 
 const qwerty = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
 
 class Wordle {
-  Web web;
   String word = Words.getWord();
+  String? username;
+  bool solved = false;
+  DateTime solvedTime = DateTime(0);
   List<String> guesses = List.empty(growable: true);
   List<String> correctLetters = List.empty(growable: true);
   List<String> incorrectLetters = List.empty(growable: true);
   List<String> excludedLetters = List.empty(growable: true);
 
-  Wordle({required this.web});
+  Wordle() {
+    init();
+  }
   bool guess(String guessWord) {
-    if (Words.canGuess(guessWord)) {
+    if (Words.canGuess(guessWord) && canGuessToday()) {
       guesses.add(guessWord);
       //calculate correct letters
       for (String row in qwerty) {
@@ -35,9 +39,38 @@ class Wordle {
           }
         }
       }
+      if (guessWord == word) {
+        //solved wordle
+        setSolveTime();
+        solved = true;
+        if (username != null) {
+          Web.setScore(username!, guesses.length);
+        }
+      } else if (guesses.length == 6) {
+        setSolveTime();
+      }
       return true;
     }
     return false;
+  }
+
+  void setSolveTime() async {
+    solvedTime = DateTime.now();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setInt('solvedtime', DateTime.now().millisecondsSinceEpoch);
+  }
+
+  void init() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (prefs.containsKey('solvedtime')) {
+      solvedTime =
+          DateTime.fromMillisecondsSinceEpoch(prefs.getInt('solvedtime') ?? 0);
+    }
+  }
+
+  bool canGuessToday() {
+    DateTime now = DateTime.now();
+    return solvedTime.isBefore(DateTime(now.year, now.month, now.day));
   }
 
   Widget widget() {
@@ -99,7 +132,10 @@ class Wordle {
           color: color,
         ),
         child: Center(
-          child: Text(letter),
+          child: Text(
+            letter.toUpperCase(),
+            style: GoogleFonts.roboto(fontSize: 20, color: Colors.black),
+          ),
         ));
   }
 }
@@ -132,7 +168,9 @@ class _WordleWidgetState extends State<WordleWidget> {
           setState(() {
             currentGuess = currentGuess.substring(0, currentGuess.length - 1);
           });
-        } else if (e.character != null && e.character != "") {
+        } else if (e.character != null &&
+            e.character != "" &&
+            currentGuess.length < 5) {
           setState(() {
             currentGuess += e.character!;
           });
@@ -142,6 +180,8 @@ class _WordleWidgetState extends State<WordleWidget> {
         if (widget.wordle.guesses.length == 6)
           Text("answer: " + widget.wordle.word),
         Text("guesses: " + widget.wordle.guesses.join(", ")),
+        if (!widget.wordle.canGuessToday())
+          Text("you can't guess today, try again tomorrow"),
         Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -155,10 +195,24 @@ class _WordleWidgetState extends State<WordleWidget> {
               ),
           ],
         ),
+        //keyboard
         Column(children: [
           for (String row in qwerty)
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
+                if (qwerty.indexOf(row) == 2)
+                  ElevatedButton(
+                      onPressed: (currentGuess.length != 5 ||
+                              !widget.wordle.canGuessToday())
+                          ? null
+                          : () {
+                              setState(() {
+                                widget.wordle.guess(currentGuess);
+                                currentGuess = "";
+                              });
+                            },
+                      child: const Icon(Icons.check)),
                 for (String letter in row.characters)
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
@@ -173,21 +227,29 @@ class _WordleWidgetState extends State<WordleWidget> {
                           })
                         }
                     },
-                    child: Text(letter),
+                    child: Text(letter.toUpperCase()),
+                  ),
+                if (qwerty.indexOf(row) == 2)
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      primary: Colors.grey,
+                      onPrimary: Colors.white,
+                    ),
+                    onPressed: currentGuess.isEmpty
+                        ? null
+                        : () => {
+                              if (currentGuess.isNotEmpty)
+                                {
+                                  setState(() {
+                                    currentGuess = currentGuess.substring(
+                                        0, currentGuess.length - 1);
+                                  })
+                                }
+                            },
+                    child: const Icon(Icons.backspace),
                   )
-              ],
-              mainAxisSize: MainAxisSize.min,
+              ].map((e) => Expanded(child: e)).toList(),
             ),
-          ElevatedButton(
-              onPressed: currentGuess.length != 5
-                  ? null
-                  : () {
-                      setState(() {
-                        widget.wordle.guess(currentGuess);
-                        currentGuess = "";
-                      });
-                    },
-              child: const Text("guess"))
         ]),
       ]),
     );

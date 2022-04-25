@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'wordle.dart';
 import 'web.dart';
 
-Web _web = new Web(username: '');
-Wordle _wordle = new Wordle(web: _web);
-void main() {
+Wordle _wordle = Wordle();
+String? _username;
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences prefs = await SharedPreferences.getInstance();
   runApp(const MyApp());
+  if (prefs.containsKey('username')) {
+    _username = await prefs.getString('username');
+    _wordle.username = _username;
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -52,33 +59,96 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    final _usernameController = TextEditingController();
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     //
     // The Flutter framework has been optimized to make rerunning build methods
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
+    Future<bool> _setUsername(String username) async {
+      if (await Web.validateUsername(username)) {
+        print('valid username');
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('username', username);
+        setState(() {
+          _username = username;
+          _wordle.username = _username;
+        });
+        await Web.createUser(_username!);
+        return true;
+      } else {
+        print('invalid username');
+        showDialogEz(
+            context: context,
+            title: const Text('error'),
+            content: const Text('invalid username'));
+        return false;
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
+      drawer: Drawer(
+          child: ListView(
+        children: [
+          ListTile(
+            title: Text('wordle'),
+          ),
+          if (_username != null)
+            ListTile(
+              leading: Text('username:'),
+              title: Text(_username!),
+            ),
+          ListTile(
+            title: Text('set username'),
+            onTap: () async {
+              return showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: const Text('enter username'),
+                      content: TextFormField(
+                        controller: _usernameController,
+                        textInputAction: TextInputAction.done,
+                        decoration:
+                            const InputDecoration(labelText: 'username'),
+                        onFieldSubmitted: (value) async {
+                          if (await _setUsername(value)) {
+                            _usernameController.clear();
+                            Navigator.of(context).pop();
+                          }
+                        },
+                      ),
+                      actions: [
+                        ElevatedButton(
+                            onPressed: (() async {
+                              if (await _setUsername(
+                                  _usernameController.text)) {
+                                _usernameController.clear();
+                                Navigator.of(context).pop();
+                              }
+                            }),
+                            child: const Text('save'))
+                      ],
+                    );
+                  });
+            },
+          ),
+          ListTile(
+            title: const Text('Show license page'),
+            onTap: () {
+              showLicensePage(context: context);
+            },
+          )
+        ],
+      )),
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
@@ -124,4 +194,26 @@ void showLicensePage({
       applicationLegalese: applicationLegalese,
     ),
   ));
+}
+
+void showDialogEz({
+  required BuildContext context,
+  required Widget title,
+  required Widget content,
+}) async {
+  return showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: title,
+          content: content,
+          actions: [
+            ElevatedButton(
+                onPressed: (() {
+                  Navigator.of(context).pop();
+                }),
+                child: const Text('ok'))
+          ],
+        );
+      });
 }
