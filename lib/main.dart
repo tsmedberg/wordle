@@ -10,7 +10,7 @@ void main() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   runApp(const MyApp());
   if (prefs.containsKey('username')) {
-    _username = await prefs.getString('username');
+    _username = prefs.getString('username');
     _wordle.username = _username;
   }
 }
@@ -70,7 +70,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // than having to individually change instances of widgets.
     Future<bool> _setUsername(String username) async {
       if (await Web.validateUsername(username)) {
-        print('valid username');
+        //print('valid username');
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setString('username', username);
         setState(() {
@@ -80,7 +80,7 @@ class _MyHomePageState extends State<MyHomePage> {
         await Web.createUser(_username!);
         return true;
       } else {
-        print('invalid username');
+        //print('invalid username');
         showDialogEz(
             context: context,
             title: const Text('error'),
@@ -98,16 +98,17 @@ class _MyHomePageState extends State<MyHomePage> {
       drawer: Drawer(
           child: ListView(
         children: [
-          ListTile(
+          const ListTile(
             title: Text('wordle'),
           ),
           if (_username != null)
             ListTile(
-              leading: Text('username:'),
+              leading: const Text('username:'),
               title: Text(_username!),
             ),
+          const Divider(),
           ListTile(
-            title: Text('set username'),
+            title: const Text('set username'),
             onTap: () async {
               return showDialog(
                   context: context,
@@ -141,6 +142,15 @@ class _MyHomePageState extends State<MyHomePage> {
                   });
             },
           ),
+          if (_username != null)
+            ListTile(
+                title: const Text('show scoreboard'),
+                onTap: () async {
+                  return showDialogEz(
+                      context: context,
+                      title: const Text('scoreboard'),
+                      content: await Web.getScoreWidget(_username!));
+                }),
           ListTile(
             title: const Text('Show license page'),
             onTap: () {
@@ -183,8 +193,8 @@ void showLicensePage({
   String? applicationLegalese,
   bool useRootNavigator = false,
 }) {
-  assert(context != null);
-  assert(useRootNavigator != null);
+  /* assert(context != null);
+  assert(useRootNavigator != null); */
   Navigator.of(context, rootNavigator: useRootNavigator)
       .push(MaterialPageRoute<void>(
     builder: (BuildContext context) => LicensePage(

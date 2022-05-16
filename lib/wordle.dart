@@ -181,7 +181,7 @@ class _WordleWidgetState extends State<WordleWidget> {
           Text("answer: " + widget.wordle.word),
         Text("guesses: " + widget.wordle.guesses.join(", ")),
         if (!widget.wordle.canGuessToday())
-          Text("you can't guess today, try again tomorrow"),
+          const Text("you can't guess today, try again tomorrow"),
         Column(
           mainAxisSize: MainAxisSize.min,
           children: [
