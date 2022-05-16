@@ -97,27 +97,34 @@ class ScoreWidget extends StatelessWidget {
     int largestScore = score.score.values.reduce((a, b) => a > b ? a : b);
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Score'),
         Text(score.username),
         for (MapEntry e in score.score.entries)
           Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(e.key.toString()),
-              if (e.value > 0)
-                Expanded(
-                  /*  width: 300, */
-                  child: FractionallySizedBox(
-                    widthFactor: e.value / largestScore,
-                    child: Container(
-                      color: Colors.green,
-                      child:
-                          Text(e.value.toString(), textAlign: TextAlign.right),
+              /* if (e.value > 0) */
+              Expanded(
+                /*  width: 300, */
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: ((e.value / largestScore) * 0.9) + 0.1,
+                  child: Container(
+                    color: Colors.blue,
+                    padding: const EdgeInsets.all(2),
+                    child: Text(
+                      e.value.toString(),
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(color: Colors.white),
                     ),
                   ),
-                )
-              else
-                Text(',' + e.value.toString())
+                ),
+              )
+              /* else
+                Text(',' + e.value.toString()) */
             ],
           )
       ],

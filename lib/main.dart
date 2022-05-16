@@ -109,6 +109,7 @@ class _MyHomePageState extends State<MyHomePage> {
           const Divider(),
           ListTile(
             title: const Text('set username'),
+            leading: const Icon(Icons.drive_file_rename_outline),
             onTap: () async {
               return showDialog(
                   context: context,
@@ -145,6 +146,7 @@ class _MyHomePageState extends State<MyHomePage> {
           if (_username != null)
             ListTile(
                 title: const Text('show scoreboard'),
+                leading: const Icon(Icons.score_outlined),
                 onTap: () async {
                   return showDialogEz(
                       context: context,
@@ -152,9 +154,21 @@ class _MyHomePageState extends State<MyHomePage> {
                       content: await Web.getScoreWidget(_username!));
                 }),
           ListTile(
-            title: const Text('Show license page'),
+            title: const Text('show license page'),
+            leading: const Icon(Icons.description_outlined),
             onTap: () {
               showLicensePage(context: context);
+            },
+          ),
+          ListTile(
+            title: const Text('about'),
+            leading: const Icon(Icons.info_outline),
+            onTap: () {
+              return showDialogEz(
+                  context: context,
+                  title: const Text('about'),
+                  content: const Text(
+                      'created by Tor Smedberg as the final project for the course Programmering 2 at Kattegattgymnasiet, 2022\nGitHub: tsmedberg/wordle\n\nfor packages in use, see \'show license page\'\nthis app uses the official wordle words, but with a offset, so that only old words are used'));
             },
           )
         ],

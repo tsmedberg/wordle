@@ -176,12 +176,16 @@ class _WordleWidgetState extends State<WordleWidget> {
           });
         }
       },
-      child: Column(children: [
-        if (widget.wordle.guesses.length == 6)
-          Text("answer: " + widget.wordle.word),
-        Text("guesses: " + widget.wordle.guesses.join(", ")),
-        if (!widget.wordle.canGuessToday())
-          const Text("you can't guess today, try again tomorrow"),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
+        if (widget.wordle.solved)
+          const Text(
+            'You solved it! 💯',
+            style: TextStyle(fontSize: 20),
+          ),
+        if (widget.wordle.guesses.length == 6 || widget.wordle.solved)
+          Text("correct answer: " + widget.wordle.word),
+        /* Text("guesses: " + widget.wordle.guesses.join(", ")), */
+
         Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -195,62 +199,68 @@ class _WordleWidgetState extends State<WordleWidget> {
               ),
           ],
         ),
+        if (!widget.wordle.canGuessToday())
+          Row(mainAxisSize: MainAxisSize.min, children: const [
+            Icon(Icons.info_outline),
+            Text("You can't guess anymore today!"),
+          ]),
         //keyboard
-        Column(children: [
-          for (String row in qwerty)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (qwerty.indexOf(row) == 2)
-                  ElevatedButton(
-                      onPressed: (currentGuess.length != 5 ||
-                              !widget.wordle.canGuessToday())
+        if (!widget.wordle.solved)
+          Column(children: [
+            for (String row in qwerty)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (qwerty.indexOf(row) == 2)
+                    ElevatedButton(
+                        onPressed: (currentGuess.length != 5 ||
+                                !widget.wordle.canGuessToday())
+                            ? null
+                            : () {
+                                setState(() {
+                                  widget.wordle.guess(currentGuess);
+                                  currentGuess = "";
+                                });
+                              },
+                        child: const Icon(Icons.check)),
+                  for (String letter in row.characters)
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        primary: widget.wordle.keyColor(letter),
+                        onPrimary: Colors.white,
+                      ),
+                      onPressed: () => {
+                        if (currentGuess.length < 5)
+                          {
+                            setState(() {
+                              currentGuess += letter;
+                            })
+                          }
+                      },
+                      child: Text(letter.toUpperCase()),
+                    ),
+                  if (qwerty.indexOf(row) == 2)
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        primary: Colors.grey,
+                        onPrimary: Colors.white,
+                      ),
+                      onPressed: currentGuess.isEmpty
                           ? null
-                          : () {
-                              setState(() {
-                                widget.wordle.guess(currentGuess);
-                                currentGuess = "";
-                              });
-                            },
-                      child: const Icon(Icons.check)),
-                for (String letter in row.characters)
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      primary: widget.wordle.keyColor(letter),
-                      onPrimary: Colors.white,
-                    ),
-                    onPressed: () => {
-                      if (currentGuess.length < 5)
-                        {
-                          setState(() {
-                            currentGuess += letter;
-                          })
-                        }
-                    },
-                    child: Text(letter.toUpperCase()),
-                  ),
-                if (qwerty.indexOf(row) == 2)
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      primary: Colors.grey,
-                      onPrimary: Colors.white,
-                    ),
-                    onPressed: currentGuess.isEmpty
-                        ? null
-                        : () => {
-                              if (currentGuess.isNotEmpty)
-                                {
-                                  setState(() {
-                                    currentGuess = currentGuess.substring(
-                                        0, currentGuess.length - 1);
-                                  })
-                                }
-                            },
-                    child: const Icon(Icons.backspace),
-                  )
-              ].map((e) => Expanded(child: e)).toList(),
-            ),
-        ]),
+                          : () => {
+                                if (currentGuess.isNotEmpty)
+                                  {
+                                    setState(() {
+                                      currentGuess = currentGuess.substring(
+                                          0, currentGuess.length - 1);
+                                    })
+                                  }
+                              },
+                      child: const Icon(Icons.backspace),
+                    )
+                ].map((e) => Expanded(child: e)).toList(),
+              ),
+          ]),
       ]),
     );
   }
